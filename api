@@ -1,58 +1,82 @@
 const express = require('express');
+const ffmpeg = require('fluent-ffmpeg');
+const path = require('path');
+const fs = require('fs');
+
 const app = express();
+app.use(express.json());
 
 // 1. آپ کی اپنی بنائی ہوئی سیکرٹ API Key
 const MY_OWN_API_KEY = "Umar_Video_Auth_9988"; 
 
-app.use(express.json());
-
-// 2. ہوم روٹ (چیک کرنے کے لیے کہ سرور چل رہا ہے یا نہیں)
+// 2. ہوم روٹ (سرور اسٹیٹس چیک کرنے کے لیے)
 app.get('/', (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: "Zenith Tech Matrix API System is Live",
-        status: "Active"
-    });
+    res.status(200).send("Zenith Video Engine is Running...");
 });
 
-// 3. ویڈیو جنریشن اینڈ پوائنٹ (جہاں Antigravity ڈیٹا بھیجے گا)
+// 3. ویڈیو جنریشن اینڈ پوائنٹ
 app.post('/make-video', (req, res) => {
     
-    // ہیڈرز سے API Key حاصل کرنا
+    // ہیڈرز سے API Key چیک کرنا
     const providedKey = req.headers['x-api-key'];
 
-    // سیکورٹی چیک: کیا کی درست ہے؟
-    if (providedKey === MY_OWN_API_KEY) {
-        
-        // یوزر کا بھیجا ہوا ٹیکسٹ حاصل کرنا
-        const videoText = req.body.text || "Default Text"; 
-        
-        console.log("Processing Video for Zenith Tech Matrix: " + videoText);
-
-        // یہاں وہ لاجک آئے گا جو ویڈیو رینڈر کرے گا
-        // فی الحال یہ ایک کامیابی کا پیغام بھیج رہا ہے
-        res.status(200).json({
-            success: true,
-            message: "درست API Key! ویڈیو پروسیسنگ شروع کر دی گئی ہے۔",
-            data: {
-                text_received: videoText,
-                aspect_ratio: "16:9", // آپ کی پسندیدہ ریشو
-                theme: "Dark Modern", // آپ کا ڈیزائن تھیم
-                brand: "Zenith Tech Matrix"
-            }
-        });
-
-    } else {
-        // اگر کی غلط ہو تو رسائی روک دیں
-        res.status(403).json({
-            success: false,
-            message: "غلط API Key! آپ کو رسائی کی اجازت نہیں ہے۔"
-        });
+    if (providedKey !== MY_OWN_API_KEY) {
+        return res.status(403).json({ success: false, message: "ناجائز رسائی! غلط API Key۔" });
     }
+
+    const { text } = req.body;
+    const outputFileName = `video-${Date.now()}.mp4`;
+    const outputPath = path.join(__dirname, 'public', outputFileName);
+
+    // 4. FFmpeg لاجک: ویڈیو بنانا (16:9 Landscape)
+    ffmpeg()
+        .input('color=c=black:s=1920x1080:d=5') // 5 سیکنڈ کا کالا بیک گراؤنڈ (Dark Theme)
+        .inputFormat('lavfi')
+        .videoFilters([
+            {
+                filter: 'drawtext',
+                options: {
+                    text: text || "Zenith Tech Matrix",
+                    fontsize: 60,
+                    fontcolor: 'white',
+                    x: '(w-text_w)/2',
+                    y: '(h-text_h)/2',
+                    shadowcolor: 'gray',
+                    shadowx: 2,
+                    shadowy: 2
+                }
+            },
+            {
+                filter: 'drawtext',
+                options: {
+                    text: 'Zenith Tech Matrix',
+                    fontsize: 30,
+                    fontcolor: 'orange',
+                    x: 'w-tw-50',
+                    y: 'h-th-50' // برانڈنگ واٹر مارک
+                }
+            }
+        ])
+        .outputOptions(['-c:v libx264', '-pix_fmt yuv420p'])
+        .save(outputPath)
+        .on('start', () => {
+            console.log("ویڈیو رینڈرنگ شروع ہو گئی ہے...");
+        })
+        .on('end', () => {
+            console.log("ویڈیو تیار ہے!");
+            res.status(200).json({
+                success: true,
+                message: "ویڈیو کامیابی سے بن گئی ہے",
+                video_url: `https://${req.headers.host}/${outputFileName}`,
+                brand: "Zenith Tech Matrix"
+            });
+        })
+        .on('error', (err) => {
+            console.error("Error: " + err.message);
+            res.status(500).json({ success: false, message: "ویڈیو بنانے میں خرابی پیش آئی" });
+        });
 });
 
-// سرور کو پورٹ 3000 پر چلانا
+// پورٹ سیٹنگ
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`سرور پورٹ ${PORT} پر تیار ہے...`);
-});
+app.listen(PORT, () => console.log(`سرور پورٹ ${PORT} پر ایکٹو ہے`));
