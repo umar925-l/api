@@ -3,7 +3,7 @@ const app = express();
 
 // 1. یہ آپ کی اپنی بنائی ہوئی API Key ہے
 const MY_OWN_API_KEY = "Umar_Video_Auth_9988"; 
-
+app.get('/', (req, res)
 app.use(express.json());
 
 // 2. یہ وہ راستہ ہے جہاں Antigravity ڈیٹا بھیجے گا
