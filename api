@@ -6,27 +6,44 @@ const MY_OWN_API_KEY = "Umar_Video_Auth_9988";
 
 app.use(express.json());
 
-// 2. وہ راستہ جہاں ڈیٹا آئے گا
+// 2. ہوم روٹ (چیک کرنے کے لیے کہ سرور چل رہا ہے یا نہیں)
+app.get('/', (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "Zenith Tech Matrix API System is Live",
+        status: "Active"
+    });
+});
+
+// 3. ویڈیو جنریشن اینڈ پوائنٹ (جہاں Antigravity ڈیٹا بھیجے گا)
 app.post('/make-video', (req, res) => {
     
-    // یوزر کے ہیڈر سے کی (Key) نکالنا
+    // ہیڈرز سے API Key حاصل کرنا
     const providedKey = req.headers['x-api-key'];
 
-    // 3. لاجک: کیا کی میچ کرتی ہے؟
+    // سیکورٹی چیک: کیا کی درست ہے؟
     if (providedKey === MY_OWN_API_KEY) {
         
-        // اگر کی ٹھیک ہے
-        const videoText = req.body.text; 
-        console.log("کمپیوٹر ویڈیو بنا رہا ہے: " + videoText);
+        // یوزر کا بھیجا ہوا ٹیکسٹ حاصل کرنا
+        const videoText = req.body.text || "Default Text"; 
+        
+        console.log("Processing Video for Zenith Tech Matrix: " + videoText);
 
+        // یہاں وہ لاجک آئے گا جو ویڈیو رینڈر کرے گا
+        // فی الحال یہ ایک کامیابی کا پیغام بھیج رہا ہے
         res.status(200).json({
             success: true,
             message: "درست API Key! ویڈیو پروسیسنگ شروع کر دی گئی ہے۔",
-            brand: "Zenith Tech Matrix"
+            data: {
+                text_received: videoText,
+                aspect_ratio: "16:9", // آپ کی پسندیدہ ریشو
+                theme: "Dark Modern", // آپ کا ڈیزائن تھیم
+                brand: "Zenith Tech Matrix"
+            }
         });
 
     } else {
-        // اگر کی غلط ہے تو 403 Forbidden ایرر
+        // اگر کی غلط ہو تو رسائی روک دیں
         res.status(403).json({
             success: false,
             message: "غلط API Key! آپ کو رسائی کی اجازت نہیں ہے۔"
@@ -34,9 +51,8 @@ app.post('/make-video', (req, res) => {
     }
 });
 
-// ہوم پیج کے لیے سادہ راستہ
-app.get('/', (req, res) => {
-    res.send("Zenith Tech Matrix API System is Running...");
+// سرور کو پورٹ 3000 پر چلانا
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`سرور پورٹ ${PORT} پر تیار ہے...`);
 });
-
-app.listen(3000, () => console.log("آپ کا سسٹم پورٹ 3000 پر ایکٹو ہے"));
